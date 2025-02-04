@@ -37,30 +37,31 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------
-# Function to Find Best Match using AI-Powered NLP
+# Function to Find Best Match Based on "Location of Shop"
 # -------------------------------
 def find_best_match(query, df):
-    if df.empty or not {"Business Name", "Business Category"}.issubset(df.columns):
+    # Check if DataFrame is valid and has the "Location of Shop" column
+    if df.empty or "Location of Shop" not in df.columns:
         return pd.DataFrame()
 
     df = df.fillna('')
-    choices = df["Business Name"].astype(str).tolist() + df["Business Category"].astype(str).tolist()
-    if "Location of Shop" in df.columns:
-        choices += df["Location of Shop"].astype(str).tolist()
-    if "Reviews of Shop" in df.columns:
-        choices += df["Reviews of Shop"].astype(str).tolist()
 
-    best_match = process.extract(query, choices, limit=5, score_cutoff=50)
-    if best_match:
-        best_matches = [match[0] for match in best_match]
-        filtered_df = df[df.apply(lambda row: any(m.lower() in str(row).lower() for m in best_matches), axis=1)]
+    # Calculate fuzzy match score for each row using the "Location of Shop" column.
+    # This will help in handling extra words in the query (e.g., "near").
+    df["match_score"] = df["Location of Shop"].apply(lambda x: process.extractOne(query, [x])[1])
 
-        if "Reviews of Shop" in filtered_df.columns:
-            filtered_df["Reviews of Shop"] = pd.to_numeric(filtered_df["Reviews of Shop"], errors='coerce').fillna(0)
-            filtered_df = filtered_df.sort_values(by="Reviews of Shop", ascending=False)
+    # Filter rows with a match score above a threshold (e.g., 50)
+    filtered_df = df[df["match_score"] >= 50].copy()
 
-        return filtered_df
-    return pd.DataFrame()
+    # Optional: Drop the match_score column before displaying the results.
+    filtered_df.drop(columns=["match_score"], inplace=True)
+
+    # Sort by "Reviews of Shop" if available.
+    if "Reviews of Shop" in filtered_df.columns:
+        filtered_df["Reviews of Shop"] = pd.to_numeric(filtered_df["Reviews of Shop"], errors='coerce').fillna(0)
+        filtered_df = filtered_df.sort_values(by="Reviews of Shop", ascending=False)
+
+    return filtered_df
 
 # -------------------------------
 # Main App UI
@@ -71,16 +72,17 @@ def main():
     st.sidebar.header("🔍 Quick Navigation")
     st.sidebar.info("Find top-rated local businesses instantly!")
 
-    st.header("Find Your Local Business Effortlessly 🏪")
+    st.header("Find Your Local Business by Area 🏪")
 
-    query = st.text_input("Search for a business (e.g., bakery in downtown)...", placeholder="Type here...", key="query")
+    # Input: Area search query (e.g., "plumber near jetpur road")
+    query = st.text_input("Search by area (e.g., plumber near jetpur road)...", placeholder="Type here...", key="query")
 
     if st.button("🚀 Search Now"):
-        with st.spinner("Finding the best businesses for you..."):
+        with st.spinner("Finding businesses in your area..."):
             filtered = find_best_match(query, businesses_df)
 
         if filtered.empty:
-            st.warning("No matching businesses found. Try refining your search.")
+            st.warning("No businesses found in that area. Try refining your search.")
         else:
             st.success("🎯 Here are the best results!")
             for _, business in filtered.iterrows():
