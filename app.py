@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from rapidfuzz import process
 
 # -------------------------------
 # Load CSV Data Safely
@@ -37,26 +36,58 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------
-# Function to Find Best Match Based on "Location of Shop"
+# Enhanced Function to Find Best Match
 # -------------------------------
 def find_best_match(query, df):
-    # Check if DataFrame is valid and has the "Location of Shop" column
-    if df.empty or "Location of Shop" not in df.columns:
+    # Ensure required columns exist
+    required_cols = {"Business Name", "Business Category", "Location of Shop"}
+    if df.empty or not required_cols.issubset(df.columns):
         return pd.DataFrame()
 
-    df = df.fillna('')
+    df = df.fillna("")
+    query_lower = query.lower().strip()
 
-    # Calculate fuzzy match score for each row using the "Location of Shop" column.
-    # This will help in handling extra words in the query (e.g., "near").
-    df["match_score"] = df["Location of Shop"].apply(lambda x: process.extractOne(query, [x])[1])
+    # Determine service and location parts
+    if " near " in query_lower:
+        # e.g., "plumber near jetpur road"
+        parts = query_lower.split(" near ")
+        service_query = parts[0].strip()
+        location_query = parts[1].strip()
+    else:
+        tokens = query_lower.split()
+        if len(tokens) >= 3:
+            # Assume last two tokens form location, rest form service
+            service_query = " ".join(tokens[:-2])
+            location_query = " ".join(tokens[-2:])
+        elif len(tokens) == 2:
+            service_query = tokens[0]
+            location_query = tokens[1]
+        elif len(tokens) == 1:
+            service_query = ""
+            location_query = tokens[0]
+        else:
+            service_query = ""
+            location_query = ""
 
-    # Filter rows with a match score above a threshold (e.g., 50)
-    filtered_df = df[df["match_score"] >= 50].copy()
+    # Define a function to check if a row matches both service and location criteria.
+    def row_matches(row):
+        # Combine business name and category for service matching.
+        service_field = (row["Business Name"] + " " + row["Business Category"]).lower()
+        location_field = row["Location of Shop"].lower()
 
-    # Optional: Drop the match_score column before displaying the results.
-    filtered_df.drop(columns=["match_score"], inplace=True)
+        service_match = True
+        if service_query:
+            service_match = service_query in service_field
 
-    # Sort by "Reviews of Shop" if available.
+        location_match = True
+        if location_query:
+            location_match = location_query in location_field
+
+        return service_match and location_match
+
+    filtered_df = df[df.apply(row_matches, axis=1)].copy()
+
+    # Optionally, sort by "Reviews of Shop" if available.
     if "Reviews of Shop" in filtered_df.columns:
         filtered_df["Reviews of Shop"] = pd.to_numeric(filtered_df["Reviews of Shop"], errors='coerce').fillna(0)
         filtered_df = filtered_df.sort_values(by="Reviews of Shop", ascending=False)
@@ -68,21 +99,20 @@ def find_best_match(query, df):
 # -------------------------------
 def main():
     st.markdown("<h1 class='title'>🌟 Go Local Grow</h1>", unsafe_allow_html=True)
-
     st.sidebar.header("🔍 Quick Navigation")
     st.sidebar.info("Find top-rated local businesses instantly!")
-
     st.header("Find Your Local Business by Area 🏪")
 
-    # Input: Area search query (e.g., "plumber near jetpur road")
-    query = st.text_input("Search by area (e.g., plumber jetpur road)...", placeholder="Type here...", key="query")
+    # Input: e.g., "plumber near jetpur road" or "plumber jetpur road"
+    query = st.text_input("Search by area (e.g., plumber near jetpur road or plumber jetpur road)...",
+                          placeholder="Type here...", key="query")
 
     if st.button("🚀 Search Now"):
         with st.spinner("Finding businesses in your area..."):
             filtered = find_best_match(query, businesses_df)
 
         if filtered.empty:
-            st.warning("No businesses found in that area. Try refining your search.")
+            st.warning("No businesses found matching your search. Try refining your query.")
         else:
             st.success("🎯 Here are the best results!")
             for _, business in filtered.iterrows():
