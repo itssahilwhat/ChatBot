@@ -16,22 +16,81 @@ def load_data():
 businesses_df = load_data()
 
 # -------------------------------
-# Custom CSS Styling for Best UI
+# Custom CSS Styling for the Best UI Ever!
 # -------------------------------
 st.markdown("""
     <style>
-        body { background-color: #121212; color: #ffffff; }
-        .title { text-align: center; color: #1db954; font-size: 3em; font-weight: bold; margin-top: 20px; }
-        .business-card {
-            background: #1e1e1e; border-radius: 15px; padding: 20px; margin: 15px 0;
-            box-shadow: 0 8px 16px rgba(0, 255, 0, 0.2);
-            border-left: 5px solid #1db954;
-            transition: transform 0.2s;
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        html, body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #141E30, #243B55);
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
         }
-        .business-card:hover { transform: scale(1.02); }
-        .business-card h3 { color: #1db954; font-size: 1.8em; margin-bottom: 5px; }
-        .business-card p { color: #ccc; margin: 2px 0; font-size: 1.1em; }
-        .search-box { text-align: center; }
+        .title {
+            text-align: center;
+            color: #1db954;
+            font-size: 3.5em;
+            font-weight: 600;
+            margin-top: 20px;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .business-card {
+            background: rgba(30, 30, 30, 0.85);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            border-left: 5px solid #1db954;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .business-card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+        }
+        .business-card h3 {
+            color: #1db954;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        .business-card p {
+            color: #cccccc;
+            margin: 4px 0;
+            font-size: 1.1em;
+        }
+        .search-box {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .stButton>button {
+            background: #1db954;
+            border: none;
+            color: #fff;
+            padding: 10px 25px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .stButton>button:hover {
+            background: #17a54d;
+        }
+        /* Sidebar styling */
+        .css-1d391kg {  /* Use the generated sidebar class from Streamlit */
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #ffffff;
+        }
+        .css-1d391kg .sidebar-content {
+            font-size: 1.1em;
+        }
+        /* Footer styling */
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: #b0bec5;
+            font-size: 0.9em;
+        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -74,8 +133,7 @@ def main():
     st.sidebar.info("Find top-rated local businesses instantly!")
     st.header("Find Your Local Business by Area 🏪")
 
-    # Input: Users can type any query such as:
-    # "plumber at rajkot", "plumber near rajkot", "barber only", "patel home services", etc.
+    # Input: Users can type any query
     query = st.text_input("Search (e.g., plumber at rajkot, barber only, patel home services)...",
                           placeholder="Type here...", key="query")
 
@@ -98,7 +156,12 @@ def main():
                 """, unsafe_allow_html=True)
 
     st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center;'>Made with ❤️ for local businesses!</p>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class="footer">
+            Made with ❤️ for local businesses!<br>
+            © 2025 Go Local Grow
+        </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
