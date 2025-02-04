@@ -75,7 +75,7 @@ def main():
     st.header("Find Your Local Business by Area 🏪")
 
     # Input: Area search query (e.g., "plumber near jetpur road")
-    query = st.text_input("Search by area (e.g., plumber near jetpur road)...", placeholder="Type here...", key="query")
+    query = st.text_input("Search by area (e.g., plumber jetpur road)...", placeholder="Type here...", key="query")
 
     if st.button("🚀 Search Now"):
         with st.spinner("Finding businesses in your area..."):
