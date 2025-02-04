@@ -47,43 +47,14 @@ def find_best_match(query, df):
     df = df.fillna("")
     query_lower = query.lower().strip()
 
-    # Determine service and location parts
-    if " near " in query_lower:
-        # e.g., "plumber near jetpur road"
-        parts = query_lower.split(" near ")
-        service_query = parts[0].strip()
-        location_query = parts[1].strip()
-    else:
-        tokens = query_lower.split()
-        if len(tokens) >= 3:
-            # Assume last two tokens form location, rest form service
-            service_query = " ".join(tokens[:-2])
-            location_query = " ".join(tokens[-2:])
-        elif len(tokens) == 2:
-            service_query = tokens[0]
-            location_query = tokens[1]
-        elif len(tokens) == 1:
-            service_query = ""
-            location_query = tokens[0]
-        else:
-            service_query = ""
-            location_query = ""
+    # Remove common stopwords to make the query flexible.
+    stopwords = {"near", "at", "in", "only", "the", "a", "an"}
+    tokens = [token for token in query_lower.split() if token not in stopwords]
 
-    # Define a function to check if a row matches both service and location criteria.
+    # Define a row matcher that requires all tokens to appear in the combined field.
     def row_matches(row):
-        # Combine business name and category for service matching.
-        service_field = (row["Business Name"] + " " + row["Business Category"]).lower()
-        location_field = row["Location of Shop"].lower()
-
-        service_match = True
-        if service_query:
-            service_match = service_query in service_field
-
-        location_match = True
-        if location_query:
-            location_match = location_query in location_field
-
-        return service_match and location_match
+        combined_field = (row["Business Name"] + " " + row["Business Category"] + " " + row["Location of Shop"]).lower()
+        return all(token in combined_field for token in tokens)
 
     filtered_df = df[df.apply(row_matches, axis=1)].copy()
 
@@ -103,8 +74,9 @@ def main():
     st.sidebar.info("Find top-rated local businesses instantly!")
     st.header("Find Your Local Business by Area 🏪")
 
-    # Input: e.g., "plumber near jetpur road" or "plumber jetpur road"
-    query = st.text_input("Search by area (e.g., plumber near jetpur road or plumber jetpur road)...",
+    # Input: Users can type any query such as:
+    # "plumber at rajkot", "plumber near rajkot", "barber only", "patel home services", etc.
+    query = st.text_input("Search (e.g., plumber at rajkot, barber only, patel home services)...",
                           placeholder="Type here...", key="query")
 
     if st.button("🚀 Search Now"):
